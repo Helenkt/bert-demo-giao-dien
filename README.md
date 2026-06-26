@@ -1,67 +1,67 @@
 # BERT Demo Giao Dien
 
-Du an gom tai lieu thuyet trinh va demo giao dien ve mo hinh BERT.
+Du an nay gom tai lieu thuyet trinh va demo giao dien minh hoa cach BERT xu ly ngon ngu tu nhien.
 
-## File chinh
+## Noi dung chinh
 
-- `outputs/bert_demo_giao_dien.html`: demo giao dien chay offline tren trinh duyet.
-- `outputs/bert_thuyet_trinh.docx`: tai lieu noi dung thuyet trinh ve BERT.
+- `outputs/bert_demo_giao_dien.html`: giao dien demo BERT.
+- `outputs/bert_thuyet_trinh.docx`: file noi dung thuyet trinh.
+- `server.py`: backend Python de chay BERT that bang `transformers`.
+- `run_bert_server.bat`: script chay nhanh tren Windows.
 
-## Cach chay demo offline
+## BERT_NAME
 
-Mo truc tiep file:
-
-```text
-outputs/bert_demo_giao_dien.html
-```
-
-Hoac chay local server trong thu muc du an:
-
-```bash
-python -m http.server 8000 --bind 127.0.0.1 -d outputs
-```
-
-Sau do mo:
+Model dang dung:
 
 ```text
-http://127.0.0.1:8000/bert_demo_giao_dien.html
+BERT Small - google/bert_uncased_L-4_H-256_A-4
 ```
 
-## Cach chay BERT that bang Python
+Day la ban BERT nho, nhe hon BERT base, phu hop de demo tren may ca nhan. Model duoc tai ve thu muc:
 
-Can cai Python truoc. Lan dau chay can co mang de cai thu vien va tai model.
+```text
+models/bert-small-en
+```
 
-Tren Windows, chay:
+Thu muc `models/` khong duoc dua len GitHub vi file model kha lon. Nguoi khac clone repo chi can chay `run_bert_server.bat`, script se cai thu vien va tai model neu may chua co.
+
+## Cach chay demo
+
+Tren Windows, mo terminal trong thu muc du an va chay:
 
 ```bat
 run_bert_server.bat
 ```
 
-Script nay se:
-
-1. Tao `.venv`
-2. Cai `transformers`, `torch`
-3. Tai model nho `google/bert_uncased_L-4_H-256_A-4` vao `models/bert-small-en`
-4. Chay server tai:
+Sau do mo:
 
 ```text
 http://127.0.0.1:8000/outputs/bert_demo_giao_dien.html
 ```
 
-Neu da cai thu vien va tai model san, co the chay truc tiep:
+Neu da co Python environment va model san, co the chay truc tiep:
 
 ```bash
 python server.py --model models/bert-small-en
 ```
 
-Neu muon cho `transformers` tu tai model khi server load lan dau:
+## Thu vien can co
+
+```text
+transformers
+torch
+safetensors
+```
+
+Co the cai bang:
 
 ```bash
-python server.py --model google/bert_uncased_L-4_H-256_A-4 --allow-download
+pip install -r requirements.txt
 ```
 
 ## Ghi chu
 
-Demo HTML van co fallback offline de thuyet trinh chac chan chay duoc. Khi backend Python dang chay, tac vu `[MASK]` se goi BERT that qua endpoint `/api/fill-mask`.
-
-`google/bert_uncased_L-4_H-256_A-4` la model BERT nho, nhe hon BERT base nhung cho ket qua fill-mask tot hon `bert-tiny`. Neu can tieng Viet tot hon, co the doi sang `bert-base-multilingual-cased`, nhung model do lon hon nhieu va tai lau hon. Phan phan loai cam xuc va hoi dap muon chay that can model BERT da fine-tune rieng cho tung tac vu.
+- Tac vu `[MASK]` se goi BERT that qua endpoint `/api/fill-mask` khi backend Python dang chay.
+- Neu backend khong chay, giao dien van co ket qua mo phong de phuc vu thuyet trinh.
+- Phan cam xuc va hoi dap trong demo la minh hoa giao dien. Muon chay that hai tac vu nay can model BERT da fine-tune rieng.
+- Repo tren GitHub chi luu source code, tai lieu va giao dien. Khong luu `.venv/` va `models/`.
