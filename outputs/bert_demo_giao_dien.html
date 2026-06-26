@@ -1,0 +1,1155 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>BERT Demo Giao Diện</title>
+  <style>
+    :root {
+      --bg: #f6f7f9;
+      --surface: #ffffff;
+      --surface-2: #f1f5f9;
+      --ink: #172033;
+      --muted: #64748b;
+      --line: #d7dde8;
+      --blue: #2563eb;
+      --blue-soft: #dbeafe;
+      --green: #0f766e;
+      --green-soft: #ccfbf1;
+      --amber: #b45309;
+      --amber-soft: #ffedd5;
+      --red: #b91c1c;
+      --red-soft: #fee2e2;
+      --shadow: 0 18px 50px rgba(15, 23, 42, 0.08);
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background:
+        linear-gradient(180deg, #f8fafc 0%, #eef2f7 100%);
+      color: var(--ink);
+      font-family: Arial, Helvetica, sans-serif;
+      letter-spacing: 0;
+    }
+
+    button,
+    textarea,
+    input {
+      font: inherit;
+    }
+
+    .app {
+      min-height: 100vh;
+      display: grid;
+      grid-template-rows: auto 1fr;
+    }
+
+    header {
+      background: var(--surface);
+      border-bottom: 1px solid var(--line);
+      padding: 16px 28px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 18px;
+      position: sticky;
+      top: 0;
+      z-index: 10;
+    }
+
+    .title-block h1 {
+      margin: 0;
+      font-size: 28px;
+      line-height: 1.2;
+      color: #0f172a;
+    }
+
+    .title-block p {
+      margin: 5px 0 0;
+      color: var(--muted);
+      font-size: 14px;
+    }
+
+    .status-strip {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+    }
+
+    .chip {
+      border: 1px solid var(--line);
+      background: var(--surface-2);
+      color: #334155;
+      padding: 7px 10px;
+      border-radius: 8px;
+      font-size: 13px;
+      white-space: nowrap;
+    }
+
+    main {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 18px;
+      padding: 18px;
+      max-width: 1180px;
+      width: 100%;
+      margin: 0 auto;
+    }
+
+    .panel {
+      background: var(--surface);
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      box-shadow: var(--shadow);
+      min-width: 0;
+    }
+
+    .nav {
+      padding: 10px;
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 10px;
+      align-self: start;
+      box-shadow: none;
+    }
+
+    .nav button {
+      width: 100%;
+      border: 1px solid transparent;
+      background: transparent;
+      color: #334155;
+      border-radius: 8px;
+      padding: 11px 12px;
+      text-align: left;
+      cursor: pointer;
+      display: grid;
+      gap: 3px;
+    }
+
+    .nav button:hover {
+      background: #f8fafc;
+      border-color: var(--line);
+    }
+
+    .nav button.active {
+      background: var(--blue-soft);
+      border-color: #93c5fd;
+      color: #1d4ed8;
+    }
+
+    .nav strong {
+      font-size: 15px;
+    }
+
+    .nav span {
+      font-size: 12px;
+      color: var(--muted);
+      line-height: 1.35;
+    }
+
+    .workspace {
+      padding: 18px;
+      display: grid;
+      gap: 16px;
+    }
+
+    .task-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 16px;
+      border-bottom: 1px solid var(--line);
+      padding-bottom: 14px;
+    }
+
+    .task-header h2 {
+      margin: 0;
+      font-size: 24px;
+      line-height: 1.2;
+    }
+
+    .task-header p {
+      margin: 6px 0 0;
+      color: var(--muted);
+      line-height: 1.45;
+      max-width: 700px;
+    }
+
+    .mode-badge {
+      border-radius: 8px;
+      background: var(--green-soft);
+      color: var(--green);
+      padding: 8px 10px;
+      font-size: 13px;
+      white-space: nowrap;
+    }
+
+    .input-grid {
+      display: grid;
+      gap: 12px;
+    }
+
+    label {
+      display: grid;
+      gap: 7px;
+      color: #334155;
+      font-weight: 700;
+      font-size: 14px;
+    }
+
+    textarea,
+    input {
+      width: 100%;
+      border: 1px solid #cbd5e1;
+      border-radius: 8px;
+      padding: 12px;
+      color: var(--ink);
+      background: #fff;
+      resize: vertical;
+      min-height: 88px;
+      line-height: 1.45;
+      outline: none;
+    }
+
+    input {
+      min-height: 42px;
+    }
+
+    textarea:focus,
+    input:focus {
+      border-color: #60a5fa;
+      box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
+    }
+
+    .qa-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 12px;
+    }
+
+    .actions {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .primary,
+    .secondary,
+    .ghost {
+      border: 1px solid transparent;
+      border-radius: 8px;
+      padding: 10px 14px;
+      cursor: pointer;
+      min-height: 42px;
+    }
+
+    .primary {
+      background: var(--blue);
+      color: #fff;
+      border-color: var(--blue);
+    }
+
+    .primary:hover {
+      background: #1d4ed8;
+    }
+
+    .secondary {
+      background: #eef2ff;
+      color: #3730a3;
+      border-color: #c7d2fe;
+    }
+
+    .ghost {
+      background: #fff;
+      color: #475569;
+      border-color: var(--line);
+    }
+
+    .result-area {
+      display: grid;
+      grid-template-columns: minmax(0, 1.08fr) minmax(320px, 0.92fr);
+      gap: 14px;
+    }
+
+    .result-box,
+    .visual-box {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 14px;
+      background: #fff;
+      min-width: 0;
+    }
+
+    .result-box h3,
+    .visual-box h3,
+    .side h3 {
+      margin: 0 0 10px;
+      font-size: 16px;
+      color: #0f172a;
+    }
+
+    .prediction-list {
+      display: grid;
+      gap: 9px;
+    }
+
+    .prediction {
+      display: grid;
+      grid-template-columns: 92px 1fr 54px;
+      gap: 9px;
+      align-items: center;
+      font-size: 14px;
+    }
+
+    .prediction strong {
+      overflow-wrap: anywhere;
+    }
+
+    .bar {
+      height: 10px;
+      border-radius: 999px;
+      background: #e2e8f0;
+      overflow: hidden;
+    }
+
+    .bar span {
+      display: block;
+      height: 100%;
+      background: var(--blue);
+      border-radius: inherit;
+    }
+
+    .filled-sentence {
+      margin-top: 12px;
+      padding: 12px;
+      background: #f8fafc;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      line-height: 1.5;
+    }
+
+    .token-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 7px;
+      min-height: 34px;
+    }
+
+    .token {
+      border: 1px solid #cbd5e1;
+      background: #f8fafc;
+      color: #334155;
+      border-radius: 8px;
+      padding: 7px 9px;
+      font-size: 13px;
+    }
+
+    .token.hot {
+      background: var(--amber-soft);
+      border-color: #fdba74;
+      color: var(--amber);
+      font-weight: 700;
+    }
+
+    .attention-list {
+      display: grid;
+      gap: 8px;
+      margin-top: 12px;
+    }
+
+    .pipeline {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 8px;
+      margin-bottom: 12px;
+    }
+
+    .stage {
+      border: 1px solid var(--line);
+      background: #f8fafc;
+      border-radius: 8px;
+      padding: 9px;
+      min-height: 76px;
+    }
+
+    .stage strong {
+      display: block;
+      color: #0f172a;
+      font-size: 13px;
+      margin-bottom: 4px;
+    }
+
+    .stage span {
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.35;
+    }
+
+    .metric-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 8px;
+      margin: 10px 0 12px;
+    }
+
+    .metric {
+      border: 1px solid var(--line);
+      background: #fff;
+      border-radius: 8px;
+      padding: 9px;
+    }
+
+    .metric span {
+      display: block;
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .metric strong {
+      display: block;
+      margin-top: 3px;
+      color: #0f172a;
+      font-size: 16px;
+    }
+
+    .explain {
+      margin-top: 12px;
+      border-left: 3px solid var(--blue);
+      padding: 9px 10px;
+      background: #f8fafc;
+      color: #334155;
+      line-height: 1.45;
+      border-radius: 0 8px 8px 0;
+      font-size: 14px;
+    }
+
+    .attention-item {
+      display: grid;
+      grid-template-columns: 82px 1fr;
+      align-items: center;
+      gap: 8px;
+      font-size: 13px;
+      color: #334155;
+    }
+
+    .attention-bar {
+      height: 8px;
+      background: #e2e8f0;
+      border-radius: 999px;
+      overflow: hidden;
+    }
+
+    .attention-bar span {
+      display: block;
+      height: 100%;
+      background: var(--amber);
+    }
+
+    .side {
+      padding: 16px;
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 14px;
+      align-self: start;
+      box-shadow: none;
+    }
+
+    .talk-block {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 12px;
+      background: #fff;
+    }
+
+    .talk-block p {
+      margin: 0;
+      color: #334155;
+      line-height: 1.5;
+      font-size: 14px;
+    }
+
+    .note {
+      background: var(--amber-soft);
+      color: #7c2d12;
+      border: 1px solid #fed7aa;
+      border-radius: 8px;
+      padding: 11px;
+      line-height: 1.45;
+      font-size: 13px;
+    }
+
+    .answer {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: var(--green-soft);
+      color: var(--green);
+      border-radius: 8px;
+      padding: 9px 11px;
+      font-weight: 700;
+      margin: 4px 0 10px;
+    }
+
+    .answer.large {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      font-size: 19px;
+      padding: 13px 15px;
+      margin-bottom: 12px;
+    }
+
+    .answer.large span {
+      font-size: 13px;
+      color: #0f766e;
+      font-weight: 400;
+    }
+
+    .answer.negative.large span {
+      color: var(--red);
+    }
+
+    .negative {
+      background: var(--red-soft);
+      color: var(--red);
+    }
+
+    .hidden {
+      display: none;
+    }
+
+    @media (max-width: 1040px) {
+      main {
+        grid-template-columns: 1fr;
+      }
+
+      .nav {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+      }
+
+      .result-area {
+        grid-template-columns: 1fr;
+      }
+
+      .pipeline,
+      .metric-grid,
+      .side {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    @media (max-width: 700px) {
+      header {
+        align-items: flex-start;
+        flex-direction: column;
+        padding: 16px;
+      }
+
+      main {
+        padding: 12px;
+      }
+
+      .nav {
+        grid-template-columns: 1fr;
+      }
+
+      .task-header {
+        display: grid;
+      }
+
+      .prediction {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <header>
+      <div class="title-block">
+        <h1>BERT Demo</h1>
+        <p>Giao diện minh họa xử lý ngôn ngữ tự nhiên bằng ngữ cảnh hai chiều</p>
+      </div>
+      <div class="status-strip" aria-label="Thông tin demo">
+        <span class="chip">Offline</span>
+        <span class="chip">Không cần cài đặt</span>
+        <span class="chip">Dùng cho thuyết trình</span>
+      </div>
+    </header>
+
+    <main>
+      <nav class="panel nav" aria-label="Chọn tác vụ">
+        <button class="active" data-task="mask" type="button">
+          <strong>Dự đoán [MASK]</strong>
+          <span>Điền từ phù hợp vào chỗ bị che</span>
+        </button>
+        <button data-task="sentiment" type="button">
+          <strong>Phân loại cảm xúc</strong>
+          <span>Nhận biết sắc thái tích cực hoặc tiêu cực</span>
+        </button>
+        <button data-task="qa" type="button">
+          <strong>Trả lời câu hỏi</strong>
+          <span>Tìm câu trả lời trong đoạn văn</span>
+        </button>
+      </nav>
+
+      <section class="panel workspace">
+        <div class="task-header">
+          <div>
+            <h2 id="taskTitle">Dự đoán từ bị che</h2>
+            <p id="taskDesc">BERT nhìn cả phần trước và phần sau của vị trí [MASK] để đoán từ phù hợp với ngữ cảnh.</p>
+          </div>
+          <span id="modeBadge" class="mode-badge">Masked Language Model</span>
+        </div>
+
+        <div id="maskInputs" class="input-grid">
+          <label>
+            Câu có [MASK]
+            <textarea id="maskText">Hôm nay trời rất [MASK], tôi muốn đi chơi.</textarea>
+          </label>
+        </div>
+
+        <div id="sentimentInputs" class="input-grid hidden">
+          <label>
+            Câu cần phân loại
+            <textarea id="sentimentText">Bộ phim này rất hay và cảm động.</textarea>
+          </label>
+        </div>
+
+        <div id="qaInputs" class="qa-grid hidden">
+          <label>
+            Đoạn văn
+            <textarea id="contextText">BERT là mô hình xử lý ngôn ngữ tự nhiên được xây dựng dựa trên kiến trúc Transformer. Điểm mạnh của BERT là hiểu ngữ cảnh hai chiều, nghĩa là mô hình nhìn cả phần trước và phần sau của một từ.</textarea>
+          </label>
+          <label>
+            Câu hỏi
+            <input id="questionText" value="BERT được xây dựng dựa trên kiến trúc nào?">
+          </label>
+        </div>
+
+        <div class="actions">
+          <button id="runBtn" class="primary" type="button">Chạy demo</button>
+          <button id="sampleBtn" class="secondary" type="button">Dùng câu mẫu</button>
+          <button id="clearBtn" class="ghost" type="button">Xóa kết quả</button>
+        </div>
+
+        <div class="result-area">
+          <section class="result-box" aria-live="polite">
+            <h3>Kết quả</h3>
+            <div id="resultContent"></div>
+          </section>
+
+          <section class="visual-box">
+            <h3>Ngữ cảnh được chú ý</h3>
+            <div id="tokenRow" class="token-row"></div>
+            <div id="attentionList" class="attention-list"></div>
+          </section>
+        </div>
+      </section>
+
+      <aside class="panel side">
+        <div class="talk-block">
+          <h3>Kịch bản nói nhanh</h3>
+          <p id="talkText">Ở demo này, em nhập một câu có từ bị che. Mô hình sẽ dựa vào các từ xung quanh để dự đoán từ hợp lý nhất.</p>
+        </div>
+        <div class="talk-block">
+          <h3>Ý chính cần nhấn mạnh</h3>
+          <p id="keyText">BERT hiểu từ bằng cách xét toàn bộ ngữ cảnh, không chỉ đọc từng từ riêng lẻ.</p>
+        </div>
+        <div class="note">
+          Bản này là demo giao diện offline để thuyết trình. Nếu chạy BERT thật, cần Python, thư viện transformers và model đã tải sẵn.
+        </div>
+      </aside>
+    </main>
+  </div>
+
+  <script>
+    const state = {
+      task: "mask"
+    };
+
+    const tasks = {
+      mask: {
+        title: "Dự đoán từ bị che",
+        desc: "BERT nhìn cả phần trước và phần sau của vị trí [MASK] để đoán từ phù hợp với ngữ cảnh.",
+        badge: "Masked Language Model",
+        talk: "Ở demo này, em nhập một câu có từ bị che. Mô hình sẽ dựa vào các từ xung quanh để dự đoán từ hợp lý nhất.",
+        key: "BERT hiểu từ bằng cách xét toàn bộ ngữ cảnh, không chỉ đọc từng từ riêng lẻ."
+      },
+      sentiment: {
+        title: "Phân loại cảm xúc",
+        desc: "BERT biến cả câu thành biểu diễn ngữ nghĩa, sau đó lớp phân loại dự đoán sắc thái của câu.",
+        badge: "Text Classification",
+        talk: "Ở demo này, em nhập một câu đánh giá. BERT đọc toàn bộ câu và dự đoán cảm xúc là tích cực hay tiêu cực.",
+        key: "Cùng một từ có thể mang ý khác nhau tùy ngữ cảnh, nên mô hình cần đọc cả câu."
+      },
+      qa: {
+        title: "Trả lời câu hỏi",
+        desc: "BERT so khớp câu hỏi với đoạn văn để tìm cụm từ có khả năng là câu trả lời.",
+        badge: "Question Answering",
+        talk: "Ở demo này, em đưa một đoạn văn và một câu hỏi. BERT tìm phần trong đoạn văn liên quan trực tiếp đến câu hỏi.",
+        key: "BERT không chỉ tìm từ trùng nhau mà còn xét quan hệ giữa câu hỏi và đoạn văn."
+      }
+    };
+
+    const samples = {
+      mask: "Hôm nay trời rất [MASK], tôi muốn đi chơi.",
+      sentiment: "Bộ phim này rất hay và cảm động.",
+      context: "BERT là mô hình xử lý ngôn ngữ tự nhiên được xây dựng dựa trên kiến trúc Transformer. Điểm mạnh của BERT là hiểu ngữ cảnh hai chiều, nghĩa là mô hình nhìn cả phần trước và phần sau của một từ.",
+      question: "BERT được xây dựng dựa trên kiến trúc nào?"
+    };
+
+    const maskCandidates = [
+      { word: "đẹp", base: 26, contexts: ["trời", "đi chơi", "nắng", "mát", "hôm nay"], type: "thời tiết" },
+      { word: "mát", base: 18, contexts: ["trời", "gió", "dễ chịu", "đi chơi"], type: "thời tiết" },
+      { word: "nắng", base: 14, contexts: ["trời", "hôm nay", "đi chơi"], type: "thời tiết" },
+      { word: "ngân hàng", base: 28, contexts: ["rút tiền", "gửi tiền", "tài khoản", "vay", "thẻ", "ATM"], type: "tài chính" },
+      { word: "ví điện tử", base: 16, contexts: ["thanh toán", "chuyển tiền", "điện thoại", "mã QR"], type: "tài chính" },
+      { word: "AI", base: 24, contexts: ["học", "môn", "trí tuệ", "mô hình", "máy học"], type: "học tập" },
+      { word: "máy học", base: 20, contexts: ["học", "AI", "dữ liệu", "mô hình"], type: "học tập" },
+      { word: "qua môn", base: 34, contexts: ["không được", "điểm thấp", "bị điểm", "thi", "môn", "đậu", "rớt"], type: "học tập" },
+      { word: "học bổng", base: 27, contexts: ["không được", "điểm thấp", "điểm", "thành tích", "học tập"], type: "học tập" },
+      { word: "đạt", base: 25, contexts: ["không được", "điểm thấp", "kiểm tra", "bài thi", "điểm"], type: "học tập" },
+      { word: "lên lớp", base: 21, contexts: ["không được", "điểm thấp", "học lực", "thi lại", "rớt"], type: "học tập" },
+      { word: "Transformer", base: 30, contexts: ["BERT", "kiến trúc", "encoder", "attention", "dựa trên"], type: "kỹ thuật" },
+      { word: "ngữ cảnh", base: 22, contexts: ["hai chiều", "câu", "từ", "hiểu", "BERT"], type: "kỹ thuật" },
+      { word: "tốt", base: 12, contexts: ["rất", "khá", "đánh giá", "sản phẩm"], type: "chung" }
+    ];
+
+    const sentimentLexicon = {
+      positive: [
+        { term: "hay", weight: 2.1 },
+        { term: "tốt", weight: 2.0 },
+        { term: "đẹp", weight: 1.7 },
+        { term: "thích", weight: 2.0 },
+        { term: "cảm động", weight: 2.2 },
+        { term: "xuất sắc", weight: 2.8 },
+        { term: "hài lòng", weight: 2.2 },
+        { term: "tuyệt", weight: 2.6 },
+        { term: "ổn", weight: 1.2 },
+        { term: "dễ hiểu", weight: 1.8 }
+      ],
+      negative: [
+        { term: "tệ", weight: 2.4 },
+        { term: "chán", weight: 2.0 },
+        { term: "dở", weight: 2.3 },
+        { term: "ghét", weight: 2.5 },
+        { term: "thất vọng", weight: 2.7 },
+        { term: "kém", weight: 2.1 },
+        { term: "lỗi", weight: 1.8 },
+        { term: "buồn", weight: 1.5 },
+        { term: "khó hiểu", weight: 1.9 }
+      ]
+    };
+
+    const negators = ["không", "chưa", "chẳng", "khó", "ít"];
+    const intensifiers = ["rất", "quá", "cực kỳ", "vô cùng", "thật sự", "khá"];
+    const stopWords = new Set(
+      "là của và trong với một các cho được dựa trên vào này kia đó thì để có không những từ câu hỏi đoạn văn mô hình tôi ra bị"
+        .split(" ")
+        .map((word) => normalizeText(word))
+    );
+
+    const navButtons = document.querySelectorAll(".nav button");
+    const taskTitle = document.getElementById("taskTitle");
+    const taskDesc = document.getElementById("taskDesc");
+    const modeBadge = document.getElementById("modeBadge");
+    const talkText = document.getElementById("talkText");
+    const keyText = document.getElementById("keyText");
+    const resultContent = document.getElementById("resultContent");
+    const tokenRow = document.getElementById("tokenRow");
+    const attentionList = document.getElementById("attentionList");
+
+    const inputGroups = {
+      mask: document.getElementById("maskInputs"),
+      sentiment: document.getElementById("sentimentInputs"),
+      qa: document.getElementById("qaInputs")
+    };
+
+    function setTask(task) {
+      state.task = task;
+      navButtons.forEach((btn) => btn.classList.toggle("active", btn.dataset.task === task));
+      Object.entries(inputGroups).forEach(([key, el]) => el.classList.toggle("hidden", key !== task));
+
+      const cfg = tasks[task];
+      taskTitle.textContent = cfg.title;
+      taskDesc.textContent = cfg.desc;
+      modeBadge.textContent = cfg.badge;
+      talkText.textContent = cfg.talk;
+      keyText.textContent = cfg.key;
+      clearResult();
+    }
+
+    function escapeHtml(text) {
+      return text
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;")
+        .replaceAll("'", "&#039;");
+    }
+
+    function tokenize(text) {
+      return text
+        .replace(/[.,!?;:()"]/g, " ")
+        .split(/\s+/)
+        .map((token) => token.trim())
+        .filter(Boolean)
+        .slice(0, 32);
+    }
+
+    function setTokens(tokens, hotWords) {
+      const hot = new Set(hotWords.map((word) => normalizeText(word)));
+      tokenRow.innerHTML = tokens.map((token) => {
+        const clean = normalizeText(token);
+        const cls = hot.has(clean) || token.includes("[MASK]") ? "token hot" : "token";
+        return `<span class="${cls}">${escapeHtml(token)}</span>`;
+      }).join("");
+    }
+
+    function setAttention(items) {
+      attentionList.innerHTML = items.map((item) => `
+        <div class="attention-item">
+          <span>${escapeHtml(item.label)}</span>
+          <div class="attention-bar"><span style="width:${item.score}%"></span></div>
+        </div>
+      `).join("");
+    }
+
+    function normalizeText(text) {
+      return text
+        .toLowerCase()
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "")
+        .replace(/đ/g, "d")
+        .replace(/[^\p{L}\p{N}\s\[\]]/gu, " ")
+        .replace(/\s+/g, " ")
+        .trim();
+    }
+
+    function splitWords(text) {
+      return normalizeText(text)
+        .split(" ")
+        .map((word) => word.trim())
+        .filter(Boolean);
+    }
+
+    function containsPhrase(text, phrase) {
+      return normalizeText(text).includes(normalizeText(phrase));
+    }
+
+    function sigmoid(x) {
+      return 1 / (1 + Math.exp(-x));
+    }
+
+    function clamp(value, min, max) {
+      return Math.max(min, Math.min(max, value));
+    }
+
+    function topItems(items, count = 3) {
+      return [...items].sort((a, b) => b.raw - a.raw).slice(0, count);
+    }
+
+    function confidenceScores(items) {
+      const maxRaw = Math.max(...items.map((item) => item.raw), 1);
+      const expItems = items.map((item) => ({ ...item, exp: Math.exp((item.raw - maxRaw) / 24) }));
+      const total = expItems.reduce((sum, item) => sum + item.exp, 0);
+      return expItems.map((item) => ({
+        ...item,
+        score: Math.max(3, Math.round((item.exp / total) * 100))
+      }));
+    }
+
+    function renderPipeline(stages) {
+      return `
+        <div class="pipeline">
+          ${stages.map((stage) => `
+            <div class="stage">
+              <strong>${escapeHtml(stage.title)}</strong>
+              <span>${escapeHtml(stage.detail)}</span>
+            </div>
+          `).join("")}
+        </div>
+      `;
+    }
+
+    function renderMetrics(metrics) {
+      return `
+        <div class="metric-grid">
+          ${metrics.map((metric) => `
+            <div class="metric">
+              <span>${escapeHtml(metric.label)}</span>
+              <strong>${escapeHtml(metric.value)}</strong>
+            </div>
+          `).join("")}
+        </div>
+      `;
+    }
+
+    function predictionTemplate(items, sentence, explanation = "") {
+      const rows = items.map((item) => `
+        <div class="prediction">
+          <strong>${escapeHtml(item.word)}</strong>
+          <div class="bar"><span style="width:${item.score}%"></span></div>
+          <span>${item.score}%</span>
+        </div>
+      `).join("");
+
+      return `
+        <div class="prediction-list">${rows}</div>
+        <div class="filled-sentence">${escapeHtml(sentence)}</div>
+        ${explanation ? `<div class="explain">${escapeHtml(explanation)}</div>` : ""}
+      `;
+    }
+
+    function predictMask() {
+      const text = document.getElementById("maskText").value.trim();
+      if (!text.includes("[MASK]")) {
+        resultContent.innerHTML = `<div class="answer negative">Cần có [MASK] trong câu</div>`;
+        setTokens(tokenize(text), []);
+        setAttention([]);
+        return;
+      }
+
+      const left = text.split("[MASK]")[0] || "";
+      const right = text.split("[MASK]")[1] || "";
+      const contextText = `${left} ${right}`;
+      const originalContextTokens = tokenize(contextText).filter((word) => !stopWords.has(normalizeText(word)));
+      const contextWords = originalContextTokens.map((word) => normalizeText(word)).filter(Boolean);
+
+      const specialMaskPattern = containsPhrase(left, "không được") && (containsPhrase(right, "điểm thấp") || containsPhrase(right, "bị điểm"));
+      const scored = maskCandidates.map((candidate) => {
+        const matchedContexts = candidate.contexts.filter((phrase) => containsPhrase(contextText, phrase));
+        const tokenOverlap = contextWords.filter((word) =>
+          word.length >= 3 && candidate.contexts.some((phrase) => splitWords(phrase).includes(word))
+        ).length;
+        const typeBoost = matchedContexts.length * 28;
+        const overlapBoost = tokenOverlap * 7;
+        const neighborBoost = contextWords.some((word) => containsPhrase(candidate.word, word)) ? 8 : 0;
+        const maskDistanceBoost = Math.max(0, 12 - Math.abs(left.split(/\s+/).length - right.split(/\s+/).length));
+        const specialBoost = specialMaskPattern && candidate.word === "qua môn" ? 48 : 0;
+        const noContextPenalty = matchedContexts.length === 0 && tokenOverlap === 0 ? 0.08 : 1;
+        return {
+          word: candidate.word,
+          type: candidate.type,
+          raw: (candidate.base + typeBoost + overlapBoost + neighborBoost + maskDistanceBoost + specialBoost) * noContextPenalty,
+          matchedContexts,
+          tokenOverlap
+        };
+      });
+
+      const contextualCandidates = scored.filter((candidate) => candidate.matchedContexts.length > 0 || candidate.tokenOverlap > 0);
+      const pool = contextualCandidates.length ? contextualCandidates : scored;
+      const predictions = confidenceScores(topItems(pool, Math.min(5, pool.length)));
+      const best = predictions[0];
+      const filled = text.replace("[MASK]", best.word);
+      const hotWords = [...new Set(["[MASK]", ...best.matchedContexts.join(" ").split(/\s+/), ...originalContextTokens.slice(0, 6)])].filter(Boolean);
+      const attention = originalContextTokens
+        .slice(0, 8)
+        .map((word, index) => ({
+          label: word,
+          score: clamp(88 - index * 7 + (hotWords.some((hot) => normalizeText(hot) === normalizeText(word)) ? 10 : 0), 28, 96)
+        }));
+
+      resultContent.innerHTML =
+        `<div class="answer large"><strong>Điền từ: ${escapeHtml(best.word)}</strong><span>${best.score}%</span></div>` +
+        renderPipeline([
+          { title: "1. Token hóa", detail: `${tokenize(text).length} token được đưa vào mô hình` },
+          { title: "2. Ngữ cảnh hai chiều", detail: "Đọc phần trước và phần sau của [MASK]" },
+          { title: "3. Chấm điểm", detail: "So khớp ngữ cảnh với các ứng viên" },
+          { title: "4. Top-k", detail: `Chọn ứng viên mạnh nhất: ${best.word}` }
+        ]) +
+        renderMetrics([
+          { label: "Tác vụ", value: "Fill-mask" },
+          { label: "Loại ngữ cảnh", value: best.type },
+          { label: "Độ tin cậy", value: `${best.score}%` }
+        ]) +
+        predictionTemplate(
+          predictions,
+          filled,
+          `Mô hình chọn "${best.word}" vì các từ xung quanh tạo ngữ cảnh ${best.type}. Đây là cách minh họa BERT dùng toàn bộ câu để đoán từ bị che.`
+        );
+      setTokens(tokenize(text), hotWords);
+      setAttention(attention);
+    }
+
+    function predictSentiment() {
+      const text = document.getElementById("sentimentText").value.trim();
+      const words = splitWords(text);
+      const hits = [];
+      let rawScore = 0;
+
+      function addHits(items, polarity) {
+        items.forEach((item) => {
+          if (!containsPhrase(text, item.term)) return;
+          const normalizedTerm = normalizeText(item.term);
+          const termIndex = normalizeText(text).split(" ").findIndex((word) => normalizedTerm.split(" ").includes(word));
+          const window = words.slice(Math.max(0, termIndex - 3), termIndex);
+          const negated = window.some((word) => negators.includes(word));
+          const intensified = window.some((word) => intensifiers.includes(word));
+          let signed = item.weight * (polarity === "positive" ? 1 : -1);
+          if (negated) signed *= -0.85;
+          if (intensified) signed *= 1.25;
+          rawScore += signed;
+          hits.push({
+            word: item.term,
+            raw: Math.abs(signed) * 20 + (intensified ? 8 : 0),
+            polarity: signed >= 0 ? "positive" : "negative",
+            note: negated ? "có phủ định" : intensified ? "được nhấn mạnh" : "từ cảm xúc"
+          });
+        });
+      }
+
+      addHits(sentimentLexicon.positive, "positive");
+      addHits(sentimentLexicon.negative, "negative");
+
+      const positive = rawScore >= 0;
+      const probability = Math.round(sigmoid(Math.abs(rawScore) || 0.8) * 100);
+      const score = clamp(probability, 55, 96);
+      const label = positive ? "Tích cực" : "Tiêu cực";
+      const cls = positive ? "answer" : "answer negative";
+      const hotWords = hits.length ? hits.map((hit) => hit.word) : words.filter((word) => !stopWords.has(word)).slice(0, 5);
+      const evidence = hits.length
+        ? hits.map((hit) => `${hit.word} (${hit.note})`).join(", ")
+        : "không có từ cảm xúc mạnh, nên mô hình dựa vào toàn câu";
+
+      resultContent.innerHTML =
+        `<div class="${cls} large"><strong>Cảm xúc: ${label}</strong><span>${score}%</span></div>` +
+        renderPipeline([
+          { title: "1. Token hóa", detail: `${tokenize(text).length} token trong câu đánh giá` },
+          { title: "2. Encoder", detail: "Gộp nghĩa của các từ theo ngữ cảnh" },
+          { title: "3. Classification head", detail: "Chuyển vector câu thành nhãn cảm xúc" },
+          { title: "4. Giải thích", detail: "Tô sáng từ tác động mạnh nhất" }
+        ]) +
+        renderMetrics([
+          { label: "Tác vụ", value: "Phân loại" },
+          { label: "Nhãn", value: label },
+          { label: "Độ tin cậy", value: `${score}%` }
+        ]) +
+        `
+        <div class="prediction-list">
+          <div class="prediction">
+            <strong>Độ tin cậy</strong>
+            <div class="bar"><span style="width:${score}%"></span></div>
+            <span>${score}%</span>
+          </div>
+        </div>
+        <div class="filled-sentence">${escapeHtml(text)}</div>
+        <div class="explain">Bằng chứng chính: ${escapeHtml(evidence)}.</div>
+      `;
+      setTokens(tokenize(text), hotWords.length ? hotWords : ["câu"]);
+      setAttention((hits.length ? confidenceScores(topItems(hits, 5)) : [{ word: "toàn câu", score: 62 }]).map((item, index) => ({
+        label: item.word,
+        score: item.score || Math.max(46, 88 - index * 14)
+      })));
+    }
+
+    function predictAnswer() {
+      const context = document.getElementById("contextText").value.trim();
+      const question = document.getElementById("questionText").value.trim();
+      const sentences = context
+        .split(/(?<=[.!?])\s+/)
+        .map((sentence) => sentence.trim())
+        .filter(Boolean);
+      const qWords = splitWords(question).filter((word) => !stopWords.has(word));
+
+      const ranked = sentences.map((sentence) => {
+        const sWords = splitWords(sentence);
+        const overlap = qWords.filter((word) => sWords.includes(word));
+        const phraseBoost = qWords.some((word) => containsPhrase(sentence, word)) ? 8 : 0;
+        const exactBoost = containsPhrase(question, "kiến trúc") && containsPhrase(sentence, "Transformer") ? 24 : 0;
+        const contextBoost = containsPhrase(question, "điểm mạnh") && containsPhrase(sentence, "hai chiều") ? 20 : 0;
+        return {
+          sentence,
+          overlap,
+          raw: overlap.length * 14 + phraseBoost + exactBoost + contextBoost + Math.min(10, sWords.length / 2)
+        };
+      });
+
+      const best = ranked.sort((a, b) => b.raw - a.raw)[0] || { sentence: "", overlap: [], raw: 0 };
+      let answer = best.sentence || "Không tìm thấy rõ trong đoạn văn";
+      if (containsPhrase(question, "kiến trúc") && containsPhrase(best.sentence, "Transformer")) {
+        answer = "Transformer";
+      } else if ((containsPhrase(question, "điểm mạnh") || containsPhrase(question, "hai chiều")) && containsPhrase(best.sentence, "hai chiều")) {
+        answer = "Hiểu ngữ cảnh hai chiều";
+      } else if (containsPhrase(question, "mô hình") && containsPhrase(best.sentence, "xử lý ngôn ngữ tự nhiên")) {
+        answer = "Mô hình xử lý ngôn ngữ tự nhiên";
+      }
+      const score = clamp(Math.round(50 + best.raw), 45, 94);
+      const hotWords = [...new Set([...qWords, ...splitWords(answer)])].slice(0, 10);
+
+      resultContent.innerHTML =
+        `<div class="answer large"><strong>Câu trả lời: ${escapeHtml(answer)}</strong><span>${score}%</span></div>` +
+        renderPipeline([
+          { title: "1. Ghép input", detail: "[CLS] câu hỏi [SEP] đoạn văn [SEP]" },
+          { title: "2. Encoder", detail: "So quan hệ giữa câu hỏi và từng câu trong đoạn" },
+          { title: "3. Span scoring", detail: "Chấm điểm vùng có khả năng là đáp án" },
+          { title: "4. Trả lời", detail: `Trích xuất: ${answer}` }
+        ]) +
+        renderMetrics([
+          { label: "Tác vụ", value: "Hỏi đáp" },
+          { label: "Câu bằng chứng", value: `${sentences.indexOf(best.sentence) + 1 || 1}` },
+          { label: "Độ phù hợp", value: `${score}%` }
+        ]) +
+        `
+        <div class="prediction-list">
+          <div class="prediction">
+            <strong>Phù hợp</strong>
+            <div class="bar"><span style="width:${score}%"></span></div>
+            <span>${score}%</span>
+          </div>
+        </div>
+        <div class="filled-sentence"><strong>Câu hỏi:</strong> ${escapeHtml(question)}<br><strong>Câu bằng chứng:</strong> ${escapeHtml(best.sentence || context)}</div>
+        <div class="explain">Mô hình ưu tiên câu có nhiều từ liên quan với câu hỏi, rồi chọn cụm trả lời ngắn nhất phù hợp.</div>
+      `;
+      setTokens(tokenize(`${question} ${context}`), hotWords);
+      setAttention((hotWords.length ? hotWords : ["câu hỏi", "đoạn văn"]).slice(0, 8).map((word, index) => ({
+        label: word,
+        score: Math.max(48, 92 - index * 7)
+      })));
+    }
+
+    function runDemo() {
+      if (state.task === "mask") predictMask();
+      if (state.task === "sentiment") predictSentiment();
+      if (state.task === "qa") predictAnswer();
+    }
+
+    function setSample() {
+      if (state.task === "mask") {
+        document.getElementById("maskText").value = samples.mask;
+      }
+      if (state.task === "sentiment") {
+        document.getElementById("sentimentText").value = samples.sentiment;
+      }
+      if (state.task === "qa") {
+        document.getElementById("contextText").value = samples.context;
+        document.getElementById("questionText").value = samples.question;
+      }
+      runDemo();
+    }
+
+    function clearResult() {
+      resultContent.innerHTML = `<div class="filled-sentence">Bấm “Chạy demo” để xem kết quả.</div>`;
+      tokenRow.innerHTML = "";
+      attentionList.innerHTML = "";
+    }
+
+    navButtons.forEach((btn) => {
+      btn.addEventListener("click", () => setTask(btn.dataset.task));
+    });
+    document.getElementById("runBtn").addEventListener("click", runDemo);
+    document.getElementById("sampleBtn").addEventListener("click", setSample);
+    document.getElementById("clearBtn").addEventListener("click", clearResult);
+
+    clearResult();
+  </script>
+</body>
+</html>
