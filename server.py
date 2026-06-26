@@ -10,6 +10,7 @@ from urllib.parse import unquote
 ROOT = Path(__file__).resolve().parent
 DEFAULT_MODEL_DIR = ROOT / "models" / "bert-small-en"
 DEFAULT_MODEL_NAME = "google/bert_uncased_L-4_H-256_A-4"
+DEFAULT_MODEL_LABEL = f"BERT Small - {DEFAULT_MODEL_NAME}"
 
 
 class BertRuntime:
@@ -17,7 +18,20 @@ class BertRuntime:
         self.model_arg = model_arg
         self.allow_download = allow_download
         self._pipeline = None
-        self._model_label = model_arg
+        self._model_label = self._display_model_label(model_arg)
+
+    def _display_model_label(self, model_arg: str) -> str:
+        normalized = model_arg.replace("\\", "/").rstrip("/")
+        if model_arg == DEFAULT_MODEL_NAME or normalized.endswith("models/bert-small-en"):
+            return DEFAULT_MODEL_LABEL
+
+        try:
+            if Path(model_arg).resolve() == DEFAULT_MODEL_DIR.resolve():
+                return DEFAULT_MODEL_LABEL
+        except OSError:
+            pass
+
+        return model_arg
 
     def status(self):
         try:
