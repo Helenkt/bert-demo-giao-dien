@@ -8,8 +8,8 @@ from urllib.parse import unquote
 
 
 ROOT = Path(__file__).resolve().parent
-DEFAULT_MODEL_DIR = ROOT / "models" / "bert-tiny"
-DEFAULT_MODEL_NAME = "prajjwal1/bert-tiny"
+DEFAULT_MODEL_DIR = ROOT / "models" / "bert-small-en"
+DEFAULT_MODEL_NAME = "google/bert_uncased_L-4_H-256_A-4"
 
 
 class BertRuntime:

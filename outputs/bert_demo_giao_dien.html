@@ -704,6 +704,7 @@
 
     const samples = {
       mask: "Hôm nay trời rất [MASK], tôi muốn đi chơi.",
+      realMask: "The color of the sky is [MASK].",
       sentiment: "Bộ phim này rất hay và cảm động.",
       context: "BERT là mô hình xử lý ngôn ngữ tự nhiên được xây dựng dựa trên kiến trúc Transformer. Điểm mạnh của BERT là hiểu ngữ cảnh hai chiều, nghĩa là mô hình nhìn cả phần trước và phần sau của một từ.",
       question: "BERT được xây dựng dựa trên kiến trúc nào?"
@@ -836,6 +837,10 @@
         realBertModel = status.model || "";
         backendStatus.textContent = realBertAvailable ? `BERT thật: ${realBertModel}` : "Offline fallback";
         backendStatus.title = status.error || "";
+        const maskInput = document.getElementById("maskText");
+        if (realBertAvailable && maskInput.value.trim() === samples.mask) {
+          maskInput.value = samples.realMask;
+        }
       } catch (error) {
         realBertAvailable = false;
         realBertModel = "";
@@ -1202,7 +1207,7 @@
 
     function setSample() {
       if (state.task === "mask") {
-        document.getElementById("maskText").value = samples.mask;
+        document.getElementById("maskText").value = realBertAvailable ? samples.realMask : samples.mask;
       }
       if (state.task === "sentiment") {
         document.getElementById("sentimentText").value = samples.sentiment;

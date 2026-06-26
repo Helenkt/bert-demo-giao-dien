@@ -41,7 +41,7 @@ Script nay se:
 
 1. Tao `.venv`
 2. Cai `transformers`, `torch`
-3. Tai model nho `prajjwal1/bert-tiny` vao `models/bert-tiny`
+3. Tai model nho `google/bert_uncased_L-4_H-256_A-4` vao `models/bert-small-en`
 4. Chay server tai:
 
 ```text
@@ -51,17 +51,17 @@ http://127.0.0.1:8000/outputs/bert_demo_giao_dien.html
 Neu da cai thu vien va tai model san, co the chay truc tiep:
 
 ```bash
-python server.py --model models/bert-tiny
+python server.py --model models/bert-small-en
 ```
 
 Neu muon cho `transformers` tu tai model khi server load lan dau:
 
 ```bash
-python server.py --model prajjwal1/bert-tiny --allow-download
+python server.py --model google/bert_uncased_L-4_H-256_A-4 --allow-download
 ```
 
 ## Ghi chu
 
 Demo HTML van co fallback offline de thuyet trinh chac chan chay duoc. Khi backend Python dang chay, tac vu `[MASK]` se goi BERT that qua endpoint `/api/fill-mask`.
 
-`prajjwal1/bert-tiny` la model BERT nho de demo chay that nhanh hon. Neu can tieng Viet tot hon, co the doi sang `bert-base-multilingual-cased`, nhung model do lon hon nhieu va tai lau hon. Phan phan loai cam xuc va hoi dap muon chay that can model BERT da fine-tune rieng cho tung tac vu.
+`google/bert_uncased_L-4_H-256_A-4` la model BERT nho, nhe hon BERT base nhung cho ket qua fill-mask tot hon `bert-tiny`. Neu can tieng Viet tot hon, co the doi sang `bert-base-multilingual-cased`, nhung model do lon hon nhieu va tai lau hon. Phan phan loai cam xuc va hoi dap muon chay that can model BERT da fine-tune rieng cho tung tac vu.
