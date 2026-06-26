@@ -578,8 +578,8 @@
         <p>Giao diện minh họa xử lý ngôn ngữ tự nhiên bằng ngữ cảnh hai chiều</p>
       </div>
       <div class="status-strip" aria-label="Thông tin demo">
-        <span class="chip">Offline</span>
-        <span class="chip">Không cần cài đặt</span>
+        <span id="backendStatus" class="chip">Offline fallback</span>
+        <span class="chip">Python BERT nếu server đang chạy</span>
         <span class="chip">Dùng cho thuyết trình</span>
       </div>
     </header>
@@ -675,6 +675,9 @@
       task: "mask"
     };
 
+    let realBertAvailable = false;
+    let realBertModel = "";
+
     const tasks = {
       mask: {
         title: "Dự đoán từ bị che",
@@ -766,6 +769,7 @@
     const resultContent = document.getElementById("resultContent");
     const tokenRow = document.getElementById("tokenRow");
     const attentionList = document.getElementById("attentionList");
+    const backendStatus = document.getElementById("backendStatus");
 
     const inputGroups = {
       mask: document.getElementById("maskInputs"),
@@ -821,6 +825,76 @@
           <div class="attention-bar"><span style="width:${item.score}%"></span></div>
         </div>
       `).join("");
+    }
+
+    async function checkRealBackend() {
+      try {
+        const response = await fetch("/api/status", { cache: "no-store" });
+        if (!response.ok) throw new Error("backend not ready");
+        const status = await response.json();
+        realBertAvailable = Boolean(status.backend && status.ready && status.packages_ok);
+        realBertModel = status.model || "";
+        backendStatus.textContent = realBertAvailable ? `BERT thật: ${realBertModel}` : "Offline fallback";
+        backendStatus.title = status.error || "";
+      } catch (error) {
+        realBertAvailable = false;
+        realBertModel = "";
+        backendStatus.textContent = "Offline fallback";
+        backendStatus.title = "Chạy server.py để dùng BERT thật";
+      }
+    }
+
+    async function tryRealFillMask(text) {
+      if (!realBertAvailable) return false;
+      try {
+        resultContent.innerHTML = `<div class="filled-sentence">Đang chạy BERT thật...</div>`;
+        const response = await fetch("/api/fill-mask", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ text })
+        });
+        const data = await response.json();
+        if (!response.ok || !data.real) throw new Error(data.error || "BERT backend error");
+
+        const predictions = data.predictions.map((item) => ({
+          word: item.word,
+          score: Math.max(1, Math.round(item.score)),
+          sequence: item.sequence
+        }));
+        const best = predictions[0];
+        const filled = best?.sequence || text.replace("[MASK]", best?.word || "");
+        const contextTokens = tokenize(text).filter((word) => word !== "[MASK]");
+
+        resultContent.innerHTML =
+          `<div class="answer large"><strong>BERT thật: ${escapeHtml(best.word)}</strong><span>${best.score}%</span></div>` +
+          renderPipeline([
+            { title: "1. Token hóa", detail: "Tokenizer của BERT thật xử lý câu đầu vào" },
+            { title: "2. Masked LM", detail: "Model dự đoán token tại vị trí [MASK]" },
+            { title: "3. Softmax", detail: "Chuyển logits thành xác suất top-k" },
+            { title: "4. Kết quả", detail: `Model chọn: ${best.word}` }
+          ]) +
+          renderMetrics([
+            { label: "Nguồn", value: "Python transformers" },
+            { label: "Model", value: data.model },
+            { label: "Tác vụ", value: "Fill-mask thật" }
+          ]) +
+          predictionTemplate(
+            predictions,
+            filled,
+            "Kết quả này được sinh trực tiếp từ model BERT thật qua Python backend, không phải luật mô phỏng trong giao diện."
+          );
+        setTokens(tokenize(text), ["[MASK]", best.word]);
+        setAttention(contextTokens.slice(0, 8).map((word, index) => ({
+          label: word,
+          score: Math.max(35, 90 - index * 7)
+        })));
+        return true;
+      } catch (error) {
+        realBertAvailable = false;
+        backendStatus.textContent = "Offline fallback";
+        backendStatus.title = error.message;
+        return false;
+      }
     }
 
     function normalizeText(text) {
@@ -909,12 +983,16 @@
       `;
     }
 
-    function predictMask() {
+    async function predictMask() {
       const text = document.getElementById("maskText").value.trim();
       if (!text.includes("[MASK]")) {
         resultContent.innerHTML = `<div class="answer negative">Cần có [MASK] trong câu</div>`;
         setTokens(tokenize(text), []);
         setAttention([]);
+        return;
+      }
+
+      if (await tryRealFillMask(text)) {
         return;
       }
 
@@ -1116,8 +1194,8 @@
       })));
     }
 
-    function runDemo() {
-      if (state.task === "mask") predictMask();
+    async function runDemo() {
+      if (state.task === "mask") await predictMask();
       if (state.task === "sentiment") predictSentiment();
       if (state.task === "qa") predictAnswer();
     }
@@ -1150,6 +1228,7 @@
     document.getElementById("clearBtn").addEventListener("click", clearResult);
 
     clearResult();
+    checkRealBackend();
   </script>
 </body>
 </html>
