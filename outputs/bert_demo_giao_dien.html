@@ -33,8 +33,12 @@
       background:
         linear-gradient(180deg, #f8fafc 0%, #eef2f7 100%);
       color: var(--ink);
-      font-family: Arial, Helvetica, sans-serif;
+      font-family: "Segoe UI", system-ui, -apple-system, BlinkMacSystemFont, "Helvetica Neue", Arial, sans-serif;
+      font-size: 15px;
+      line-height: 1.5;
       letter-spacing: 0;
+      text-rendering: optimizeLegibility;
+      -webkit-font-smoothing: antialiased;
     }
 
     button,
@@ -66,6 +70,7 @@
       margin: 0;
       font-size: 28px;
       line-height: 1.2;
+      font-weight: 700;
       color: #0f172a;
     }
 
@@ -172,6 +177,7 @@
       margin: 0;
       font-size: 24px;
       line-height: 1.2;
+      font-weight: 650;
     }
 
     .task-header p {
@@ -187,6 +193,7 @@
       color: var(--green);
       padding: 8px 10px;
       font-size: 13px;
+      font-weight: 600;
       white-space: nowrap;
     }
 
@@ -291,6 +298,7 @@
     .side h3 {
       margin: 0 0 10px;
       font-size: 16px;
+      font-weight: 650;
       color: #0f172a;
     }
 
@@ -488,11 +496,12 @@
       display: inline-flex;
       align-items: center;
       gap: 8px;
-      background: var(--green-soft);
+      background: #e6fffb;
       color: var(--green);
+      border: 1px solid #99f6e4;
       border-radius: 8px;
       padding: 9px 11px;
-      font-weight: 700;
+      font-weight: 600;
       margin: 4px 0 10px;
     }
 
@@ -501,9 +510,14 @@
       justify-content: space-between;
       align-items: center;
       gap: 12px;
-      font-size: 19px;
+      font-size: 18px;
+      line-height: 1.35;
       padding: 13px 15px;
       margin-bottom: 12px;
+    }
+
+    .answer.large strong {
+      font-weight: 600;
     }
 
     .answer.large span {
@@ -830,7 +844,7 @@
         const status = await response.json();
         realBertAvailable = Boolean(status.backend && status.ready && status.packages_ok);
         realBertModel = status.model || "";
-        backendStatus.textContent = realBertAvailable ? `BERT thật: ${realBertModel}` : "Offline fallback";
+        backendStatus.textContent = realBertAvailable ? `BERT_NAME: ${realBertModel}` : "Offline fallback";
         backendStatus.title = status.error || "";
         const maskInput = document.getElementById("maskText");
         if (realBertAvailable && maskInput.value.trim() === samples.mask) {
