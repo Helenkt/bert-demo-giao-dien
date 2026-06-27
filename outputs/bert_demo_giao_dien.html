@@ -197,6 +197,16 @@
       white-space: nowrap;
     }
 
+    .mode-badge.simulated {
+      background: var(--amber-soft);
+      color: var(--amber);
+    }
+
+    .mode-badge.real {
+      background: var(--green-soft);
+      color: var(--green);
+    }
+
     .input-grid {
       display: grid;
       gap: 12px;
@@ -278,6 +288,11 @@
       border-color: var(--line);
     }
 
+    .actions button:disabled {
+      cursor: wait;
+      opacity: 0.68;
+    }
+
     .result-area {
       display: grid;
       grid-template-columns: minmax(0, 1.08fr) minmax(320px, 0.92fr);
@@ -300,6 +315,13 @@
       font-size: 16px;
       font-weight: 650;
       color: #0f172a;
+    }
+
+    .visual-note {
+      margin: -4px 0 12px;
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.4;
     }
 
     .prediction-list {
@@ -564,6 +586,17 @@
         align-items: flex-start;
         flex-direction: column;
         padding: 16px;
+        position: static;
+      }
+
+      .status-strip,
+      .chip {
+        width: 100%;
+      }
+
+      .chip {
+        white-space: normal;
+        overflow-wrap: anywhere;
       }
 
       main {
@@ -571,11 +604,37 @@
       }
 
       .nav {
-        grid-template-columns: 1fr;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 6px;
+      }
+
+      .nav button {
+        min-height: 58px;
+        padding: 8px 6px;
+        place-content: center;
+        text-align: center;
+      }
+
+      .nav strong {
+        font-size: 13px;
+        line-height: 1.25;
+      }
+
+      .nav span {
+        display: none;
       }
 
       .task-header {
         display: grid;
+      }
+
+      .task-header h2 {
+        font-size: 22px;
+      }
+
+      .mode-badge {
+        width: fit-content;
+        white-space: normal;
       }
 
       .prediction {
@@ -592,7 +651,7 @@
         <p>Giao diện minh họa xử lý ngôn ngữ tự nhiên bằng ngữ cảnh hai chiều</p>
       </div>
       <div class="status-strip" aria-label="Thông tin demo">
-        <span id="backendStatus" class="chip">Offline fallback</span>
+        <span id="backendStatus" class="chip">BERT_NAME: Đang kiểm tra...</span>
       </div>
     </header>
 
@@ -618,7 +677,7 @@
             <h2 id="taskTitle">Dự đoán từ bị che</h2>
             <p id="taskDesc">BERT nhìn cả phần trước và phần sau của vị trí [MASK] để đoán từ phù hợp với ngữ cảnh.</p>
           </div>
-          <span id="modeBadge" class="mode-badge">Masked Language Model</span>
+          <span id="modeBadge" class="mode-badge simulated">Đang kiểm tra · Masked LM</span>
         </div>
 
         <div id="maskInputs" class="input-grid">
@@ -659,7 +718,8 @@
           </section>
 
           <section class="visual-box">
-            <h3>Ngữ cảnh được chú ý</h3>
+            <h3>Từ khóa ngữ cảnh</h3>
+            <p class="visual-note">Mức độ liên quan minh họa, không phải trọng số attention của model.</p>
             <div id="tokenRow" class="token-row"></div>
             <div id="attentionList" class="attention-list"></div>
           </section>
@@ -691,29 +751,29 @@
       mask: {
         title: "Dự đoán từ bị che",
         desc: "BERT nhìn cả phần trước và phần sau của vị trí [MASK] để đoán từ phù hợp với ngữ cảnh.",
-        badge: "Masked Language Model",
+        taskName: "Masked LM",
         talk: "Ở demo này, em nhập một câu có từ bị che. Mô hình sẽ dựa vào các từ xung quanh để dự đoán từ hợp lý nhất.",
         key: "BERT hiểu từ bằng cách xét toàn bộ ngữ cảnh, không chỉ đọc từng từ riêng lẻ."
       },
       sentiment: {
         title: "Phân loại cảm xúc",
-        desc: "BERT biến cả câu thành biểu diễn ngữ nghĩa, sau đó lớp phân loại dự đoán sắc thái của câu.",
-        badge: "Text Classification",
-        talk: "Ở demo này, em nhập một câu đánh giá. BERT đọc toàn bộ câu và dự đoán cảm xúc là tích cực hay tiêu cực.",
+        desc: "Minh họa cách một mô hình BERT đã fine-tune có thể phân loại sắc thái của cả câu.",
+        taskName: "Text Classification",
+        talk: "Phần này mô phỏng quy trình phân loại cảm xúc. Để chạy BERT thật cần một model đã fine-tune riêng cho tác vụ này.",
         key: "Cùng một từ có thể mang ý khác nhau tùy ngữ cảnh, nên mô hình cần đọc cả câu."
       },
       qa: {
         title: "Trả lời câu hỏi",
-        desc: "BERT so khớp câu hỏi với đoạn văn để tìm cụm từ có khả năng là câu trả lời.",
-        badge: "Question Answering",
-        talk: "Ở demo này, em đưa một đoạn văn và một câu hỏi. BERT tìm phần trong đoạn văn liên quan trực tiếp đến câu hỏi.",
+        desc: "Minh họa cách một mô hình BERT đã fine-tune tìm câu trả lời trong đoạn văn.",
+        taskName: "Question Answering",
+        talk: "Phần này mô phỏng quy trình hỏi đáp. BERT thật cần model đã fine-tune để chấm điểm vị trí bắt đầu và kết thúc của đáp án.",
         key: "BERT không chỉ tìm từ trùng nhau mà còn xét quan hệ giữa câu hỏi và đoạn văn."
       }
     };
 
     const samples = {
       mask: "Hôm nay trời rất [MASK], tôi muốn đi chơi.",
-      realMask: "The color of the sky is [MASK].",
+      realMask: "Python is a programming [MASK].",
       sentiment: "Bộ phim này rất hay và cảm động.",
       context: "BERT là mô hình xử lý ngôn ngữ tự nhiên được xây dựng dựa trên kiến trúc Transformer. Điểm mạnh của BERT là hiểu ngữ cảnh hai chiều, nghĩa là mô hình nhìn cả phần trước và phần sau của một từ.",
       question: "BERT được xây dựng dựa trên kiến trúc nào?"
@@ -780,6 +840,7 @@
     const tokenRow = document.getElementById("tokenRow");
     const attentionList = document.getElementById("attentionList");
     const backendStatus = document.getElementById("backendStatus");
+    const runBtn = document.getElementById("runBtn");
 
     const inputGroups = {
       mask: document.getElementById("maskInputs"),
@@ -795,10 +856,27 @@
       const cfg = tasks[task];
       taskTitle.textContent = cfg.title;
       taskDesc.textContent = cfg.desc;
-      modeBadge.textContent = cfg.badge;
+      updateModeBadge();
       talkText.textContent = cfg.talk;
       keyText.textContent = cfg.key;
       clearResult();
+    }
+
+    function updateModeBadge() {
+      const cfg = tasks[state.task];
+      const isReal = state.task === "mask" && realBertAvailable;
+      modeBadge.textContent = `${isReal ? "BERT thật" : "Mô phỏng"} · ${cfg.taskName}`;
+      modeBadge.className = `mode-badge ${isReal ? "real" : "simulated"}`;
+      modeBadge.title = isReal
+        ? "Kết quả được tạo bởi model BERT qua Python backend"
+        : "Kết quả minh họa bằng luật cục bộ, không phải đầu ra của model BERT";
+    }
+
+    function setBusy(isBusy) {
+      state.running = isBusy;
+      runBtn.disabled = isBusy;
+      runBtn.textContent = isBusy ? "Đang chạy..." : "Chạy demo";
+      runBtn.setAttribute("aria-busy", String(isBusy));
     }
 
     function escapeHtml(text) {
@@ -844,8 +922,9 @@
         const status = await response.json();
         realBertAvailable = Boolean(status.backend && status.ready && status.packages_ok);
         realBertModel = status.model || "";
-        backendStatus.textContent = realBertAvailable ? `BERT_NAME: ${realBertModel}` : "Offline fallback";
+        backendStatus.textContent = realBertAvailable ? `BERT_NAME: ${realBertModel}` : "BERT_NAME: Không khả dụng";
         backendStatus.title = status.error || "";
+        updateModeBadge();
         const maskInput = document.getElementById("maskText");
         if (realBertAvailable && maskInput.value.trim() === samples.mask) {
           maskInput.value = samples.realMask;
@@ -853,13 +932,14 @@
       } catch (error) {
         realBertAvailable = false;
         realBertModel = "";
-        backendStatus.textContent = "Offline fallback";
+        backendStatus.textContent = "BERT_NAME: Không kết nối";
         backendStatus.title = "Chạy server.py để dùng BERT thật";
+        updateModeBadge();
       }
     }
 
     async function tryRealFillMask(text) {
-      if (!realBertAvailable) return false;
+      if (!realBertAvailable) return "unavailable";
       try {
         resultContent.innerHTML = `<div class="filled-sentence">Đang chạy BERT thật...</div>`;
         const response = await fetch("/api/fill-mask", {
@@ -902,12 +982,19 @@
           label: word,
           score: Math.max(35, 90 - index * 7)
         })));
-        return true;
+        return "success";
       } catch (error) {
         realBertAvailable = false;
-        backendStatus.textContent = "Offline fallback";
+        backendStatus.textContent = "BERT_NAME: Mất kết nối";
         backendStatus.title = error.message;
-        return false;
+        updateModeBadge();
+        resultContent.innerHTML = `
+          <div class="answer negative"><strong>Không chạy được BERT thật</strong></div>
+          <div class="explain">${escapeHtml(error.message)}. Bấm “Chạy demo” để thử kết nối lại.</div>
+        `;
+        setTokens(tokenize(text), ["[MASK]"]);
+        setAttention([]);
+        return "error";
       }
     }
 
@@ -930,7 +1017,10 @@
     }
 
     function containsPhrase(text, phrase) {
-      return normalizeText(text).includes(normalizeText(phrase));
+      const normalizedText = normalizeText(text);
+      const normalizedPhrase = normalizeText(phrase);
+      if (!normalizedPhrase) return false;
+      return ` ${normalizedText} `.includes(` ${normalizedPhrase} `);
     }
 
     function sigmoid(x) {
@@ -1006,7 +1096,8 @@
         return;
       }
 
-      if (await tryRealFillMask(text)) {
+      const realResult = await tryRealFillMask(text);
+      if (realResult === "success" || realResult === "error") {
         return;
       }
 
@@ -1051,7 +1142,7 @@
         }));
 
       resultContent.innerHTML =
-        `<div class="answer large"><strong>Điền từ: ${escapeHtml(best.word)}</strong><span>${best.score}%</span></div>` +
+        `<div class="answer large"><strong>Mô phỏng: ${escapeHtml(best.word)}</strong><span>${best.score}%</span></div>` +
         renderPipeline([
           { title: "1. Token hóa", detail: `${tokenize(text).length} token được đưa vào mô hình` },
           { title: "2. Ngữ cảnh hai chiều", detail: "Đọc phần trước và phần sau của [MASK]" },
@@ -1059,6 +1150,7 @@
           { title: "4. Top-k", detail: `Chọn ứng viên mạnh nhất: ${best.word}` }
         ]) +
         renderMetrics([
+          { label: "Nguồn", value: "Luật minh họa cục bộ" },
           { label: "Tác vụ", value: "Fill-mask" },
           { label: "Loại ngữ cảnh", value: best.type },
           { label: "Độ tin cậy", value: `${best.score}%` }
@@ -1066,7 +1158,7 @@
         predictionTemplate(
           predictions,
           filled,
-          `Mô hình chọn "${best.word}" vì các từ xung quanh tạo ngữ cảnh ${best.type}. Đây là cách minh họa BERT dùng toàn bộ câu để đoán từ bị che.`
+          `Đây là kết quả mô phỏng bằng luật ngữ cảnh, không phải đầu ra của model BERT. Ứng viên "${best.word}" khớp với ngữ cảnh ${best.type}.`
         );
       setTokens(tokenize(text), hotWords);
       setAttention(attention);
@@ -1113,7 +1205,7 @@
         : "không có từ cảm xúc mạnh, nên mô hình dựa vào toàn câu";
 
       resultContent.innerHTML =
-        `<div class="${cls} large"><strong>Cảm xúc: ${label}</strong><span>${score}%</span></div>` +
+        `<div class="${cls} large"><strong>Mô phỏng: ${label}</strong><span>${score}%</span></div>` +
         renderPipeline([
           { title: "1. Token hóa", detail: `${tokenize(text).length} token trong câu đánh giá` },
           { title: "2. Encoder", detail: "Gộp nghĩa của các từ theo ngữ cảnh" },
@@ -1121,6 +1213,7 @@
           { title: "4. Giải thích", detail: "Tô sáng từ tác động mạnh nhất" }
         ]) +
         renderMetrics([
+          { label: "Nguồn", value: "Từ điển cảm xúc cục bộ" },
           { label: "Tác vụ", value: "Phân loại" },
           { label: "Nhãn", value: label },
           { label: "Độ tin cậy", value: `${score}%` }
@@ -1178,7 +1271,7 @@
       const hotWords = [...new Set([...qWords, ...splitWords(answer)])].slice(0, 10);
 
       resultContent.innerHTML =
-        `<div class="answer large"><strong>Câu trả lời: ${escapeHtml(answer)}</strong><span>${score}%</span></div>` +
+        `<div class="answer large"><strong>Mô phỏng: ${escapeHtml(answer)}</strong><span>${score}%</span></div>` +
         renderPipeline([
           { title: "1. Ghép input", detail: "[CLS] câu hỏi [SEP] đoạn văn [SEP]" },
           { title: "2. Encoder", detail: "So quan hệ giữa câu hỏi và từng câu trong đoạn" },
@@ -1186,6 +1279,7 @@
           { title: "4. Trả lời", detail: `Trích xuất: ${answer}` }
         ]) +
         renderMetrics([
+          { label: "Nguồn", value: "So khớp từ khóa cục bộ" },
           { label: "Tác vụ", value: "Hỏi đáp" },
           { label: "Câu bằng chứng", value: `${sentences.indexOf(best.sentence) + 1 || 1}` },
           { label: "Độ phù hợp", value: `${score}%` }
@@ -1209,9 +1303,18 @@
     }
 
     async function runDemo() {
-      if (state.task === "mask") await predictMask();
-      if (state.task === "sentiment") predictSentiment();
-      if (state.task === "qa") predictAnswer();
+      if (state.running) return;
+      setBusy(true);
+      try {
+        if (state.task === "mask" && !realBertAvailable) {
+          await checkRealBackend();
+        }
+        if (state.task === "mask") await predictMask();
+        if (state.task === "sentiment") predictSentiment();
+        if (state.task === "qa") predictAnswer();
+      } finally {
+        setBusy(false);
+      }
     }
 
     function setSample() {
