@@ -7,7 +7,9 @@ Du an nay gom tai lieu thuyet trinh va demo giao dien minh hoa cach BERT xu ly n
 - `outputs/bert_demo_giao_dien.html`: giao dien demo BERT.
 - `outputs/bert_thuyet_trinh.docx`: file noi dung thuyet trinh.
 - `server.py`: backend Python de chay BERT that bang `transformers`.
-- `run_bert_server.bat`: script chay nhanh tren Windows.
+- `setup_bert_demo.bat`: cai thu vien va tai model lan dau.
+- `start_bert_demo.bat`: chay server nhanh khi da setup xong.
+- `run_bert_server.bat`: script tat-ca-trong-mot tren Windows.
 
 ## BERT_NAME
 
@@ -25,9 +27,21 @@ models/bert-small-en
 
 Thu muc `models/` khong duoc dua len GitHub vi file model kha lon. Nguoi khac clone repo chi can chay `run_bert_server.bat`, script se cai thu vien va tai model neu may chua co.
 
-## Cach chay demo
+## Cach chay demo nhanh
 
-Tren Windows, mo terminal trong thu muc du an va chay:
+Lan dau tien, mo terminal trong thu muc du an va chay:
+
+```bat
+setup_bert_demo.bat
+```
+
+Tu lan sau, chi can chay:
+
+```bat
+start_bert_demo.bat
+```
+
+Neu muon dung mot lenh de vua setup vua chay server:
 
 ```bat
 run_bert_server.bat
@@ -43,6 +57,12 @@ Neu da co Python environment va model san, co the chay truc tiep:
 
 ```bash
 python server.py --model models/bert-small-en
+```
+
+Mac dinh `server.py` se tai model truoc khi mo server de luc bam "Chay demo" khong bi cho qua lau. Neu muon mo server truoc roi tai model o lan du doan dau tien:
+
+```bash
+python server.py --model models/bert-small-en --lazy
 ```
 
 ## Thu vien can co
@@ -62,6 +82,7 @@ pip install -r requirements.txt
 ## Ghi chu
 
 - Tac vu `[MASK]` se goi BERT that qua endpoint `/api/fill-mask` khi backend Python dang chay.
+- Backend tra ve token WordPiece that, token id va thong tin kien truc nho cua model de giao dien minh hoa dung hon.
 - Neu backend khong chay, giao dien van co ket qua mo phong de phuc vu thuyet trinh.
 - Phan cam xuc va hoi dap trong demo la minh hoa giao dien. Muon chay that hai tac vu nay can model BERT da fine-tune rieng.
 - Repo tren GitHub chi luu source code, tai lieu va giao dien. Khong luu `.venv/` va `models/`.

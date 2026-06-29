@@ -2,6 +2,7 @@ import argparse
 import json
 import mimetypes
 import os
+import threading
 from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from urllib.parse import unquote
@@ -18,6 +19,10 @@ class BertRuntime:
         self.model_arg = model_arg
         self.allow_download = allow_download
         self._pipeline = None
+        self._tokenizer = None
+        self._model = None
+        self._lock = threading.Lock()
+        self._load_error = ""
         self._model_label = self._display_model_label(model_arg)
 
     def _display_model_label(self, model_arg: str) -> str:
@@ -54,27 +59,68 @@ class BertRuntime:
             "ready": packages_ok and (local_model_ready or self.allow_download),
             "packages_ok": packages_ok,
             "model": self._model_label,
+            "loaded": self._pipeline is not None,
             "local_model_ready": local_model_ready,
             "allow_download": self.allow_download,
+            "error": self._load_error,
         }
 
     def load(self):
         if self._pipeline is not None:
             return self._pipeline
 
-        from transformers import AutoModelForMaskedLM, AutoTokenizer, pipeline
+        with self._lock:
+            if self._pipeline is not None:
+                return self._pipeline
 
-        local_files_only = not self.allow_download
-        tokenizer = AutoTokenizer.from_pretrained(self.model_arg, local_files_only=local_files_only)
-        model = AutoModelForMaskedLM.from_pretrained(self.model_arg, local_files_only=local_files_only)
-        self._pipeline = pipeline("fill-mask", model=model, tokenizer=tokenizer, top_k=5)
+            from transformers import AutoModelForMaskedLM, AutoTokenizer, pipeline
+
+            local_files_only = not self.allow_download
+            try:
+                self._tokenizer = AutoTokenizer.from_pretrained(self.model_arg, local_files_only=local_files_only)
+                self._model = AutoModelForMaskedLM.from_pretrained(self.model_arg, local_files_only=local_files_only)
+                self._pipeline = pipeline("fill-mask", model=self._model, tokenizer=self._tokenizer, top_k=5)
+                self._load_error = ""
+            except Exception as exc:
+                self._load_error = str(exc)
+                raise
         return self._pipeline
 
+    def wordpiece_tokens(self, text: str):
+        self.load()
+        encoded = self._tokenizer(text, add_special_tokens=True, truncation=True, max_length=128)
+        token_ids = encoded.get("input_ids", [])
+        tokens = self._tokenizer.convert_ids_to_tokens(token_ids)
+        special_tokens = set(self._tokenizer.all_special_tokens)
+        mask_token = self._tokenizer.mask_token
+        return [
+            {
+                "token": token,
+                "id": int(token_id),
+                "special": token in special_tokens,
+                "mask": token == mask_token,
+            }
+            for token, token_id in zip(tokens, token_ids)
+        ]
+
+    def model_metadata(self):
+        self.load()
+        config = getattr(self._model, "config", None)
+        if config is None:
+            return {}
+        return {
+            "hidden_layers": getattr(config, "num_hidden_layers", None),
+            "hidden_size": getattr(config, "hidden_size", None),
+            "attention_heads": getattr(config, "num_attention_heads", None),
+            "max_position_embeddings": getattr(config, "max_position_embeddings", None),
+        }
+
     def fill_mask(self, text: str):
-        if "[MASK]" not in text:
-            raise ValueError("Cau dau vao can co [MASK].")
+        if text.count("[MASK]") != 1:
+            raise ValueError("Cau dau vao can co dung 1 token [MASK].")
 
         pipe = self.load()
+        tokens = self.wordpiece_tokens(text)
         outputs = pipe(text)
         predictions = []
         for item in outputs:
@@ -91,6 +137,9 @@ class BertRuntime:
             "task": "fill-mask",
             "model": self._model_label,
             "input": text,
+            "tokens": tokens,
+            "token_count": len(tokens),
+            "metadata": self.model_metadata(),
             "predictions": predictions,
         }
 
@@ -179,12 +228,20 @@ def parse_args():
         action="store_true",
         help="Allow transformers to download model files if the model is not available locally.",
     )
+    parser.add_argument(
+        "--lazy",
+        action="store_true",
+        help="Start the web server before loading the BERT model.",
+    )
     return parser.parse_args()
 
 
 def main():
     args = parse_args()
     Handler.bert_runtime = BertRuntime(args.model, args.allow_download)
+    if not args.lazy:
+        print("Loading BERT model...")
+        Handler.bert_runtime.load()
     server = ThreadingHTTPServer((args.host, args.port), Handler)
     print(f"Serving BERT demo at http://{args.host}:{args.port}/outputs/bert_demo_giao_dien.html")
     print(f"Model: {args.model}")

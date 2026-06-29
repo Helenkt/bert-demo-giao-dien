@@ -380,11 +380,22 @@
       font-size: 13px;
     }
 
+    .token.special {
+      background: #eef2ff;
+      border-color: #c7d2fe;
+      color: #3730a3;
+      border-style: dashed;
+    }
+
     .token.hot {
       background: var(--amber-soft);
       border-color: #fdba74;
       color: var(--amber);
       font-weight: 700;
+    }
+
+    .token.subword {
+      font-family: Consolas, "Segoe UI", sans-serif;
     }
 
     .attention-list {
@@ -879,7 +890,8 @@
       runBtn.setAttribute("aria-busy", String(isBusy));
     }
 
-    function escapeHtml(text) {
+    function escapeHtml(value) {
+      const text = String(value ?? "");
       return text
         .replaceAll("&", "&amp;")
         .replaceAll("<", "&lt;")
@@ -897,12 +909,35 @@
         .slice(0, 32);
     }
 
+    function normalizeTokenItem(token) {
+      if (typeof token === "string") {
+        return { text: token, id: null, special: false, mask: token.includes("[MASK]") };
+      }
+      return {
+        text: token?.token || "",
+        id: token?.id ?? null,
+        special: Boolean(token?.special),
+        mask: Boolean(token?.mask)
+      };
+    }
+
+    function tokenText(token) {
+      return normalizeTokenItem(token).text;
+    }
+
     function setTokens(tokens, hotWords) {
-      const hot = new Set(hotWords.map((word) => normalizeText(word)));
-      tokenRow.innerHTML = tokens.map((token) => {
-        const clean = normalizeText(token);
-        const cls = hot.has(clean) || token.includes("[MASK]") ? "token hot" : "token";
-        return `<span class="${cls}">${escapeHtml(token)}</span>`;
+      const hot = new Set(hotWords.map((word) => normalizeText(String(word))));
+      tokenRow.innerHTML = tokens.map((rawToken) => {
+        const item = normalizeTokenItem(rawToken);
+        const clean = normalizeText(item.text);
+        const classes = [
+          "token",
+          hot.has(clean) || item.mask || item.text.includes("[MASK]") ? "hot" : "",
+          item.special ? "special" : "",
+          item.text.startsWith("##") ? "subword" : ""
+        ].filter(Boolean).join(" ");
+        const title = item.id === null ? "Token minh hoa" : `WordPiece token id: ${item.id}`;
+        return `<span class="${classes}" title="${escapeHtml(title)}">${escapeHtml(item.text)}</span>`;
       }).join("");
     }
 
@@ -923,7 +958,7 @@
         realBertAvailable = Boolean(status.backend && status.ready && status.packages_ok);
         realBertModel = status.model || "";
         backendStatus.textContent = realBertAvailable ? `BERT_NAME: ${realBertModel}` : "BERT_NAME: Không khả dụng";
-        backendStatus.title = status.error || "";
+        backendStatus.title = status.error || (status.loaded ? "Model đã được tải sẵn" : "Model sẽ tải khi chạy lần đầu");
         updateModeBadge();
         const maskInput = document.getElementById("maskText");
         if (realBertAvailable && maskInput.value.trim() === samples.mask) {
@@ -957,12 +992,22 @@
         }));
         const best = predictions[0];
         const filled = best?.sequence || text.replace("[MASK]", best?.word || "");
-        const contextTokens = tokenize(text).filter((word) => word !== "[MASK]");
+        const bertTokens = Array.isArray(data.tokens) && data.tokens.length ? data.tokens : tokenize(text);
+        const contextTokens = bertTokens
+          .filter((token) => {
+            const item = normalizeTokenItem(token);
+            return item.text && !item.special && !item.mask;
+          })
+          .map((token) => tokenText(token));
+        const metadata = data.metadata || {};
+        const modelShape = metadata.hidden_layers && metadata.hidden_size && metadata.attention_heads
+          ? `${metadata.hidden_layers} layer · hidden ${metadata.hidden_size} · ${metadata.attention_heads} head`
+          : "BERT Small";
 
         resultContent.innerHTML =
           `<div class="answer large"><strong>BERT thật: ${escapeHtml(best.word)}</strong><span>${best.score}%</span></div>` +
           renderPipeline([
-            { title: "1. Token hóa", detail: "Tokenizer của BERT thật xử lý câu đầu vào" },
+            { title: "1. Token hóa", detail: `${bertTokens.length} WordPiece token, gồm [CLS], [MASK], [SEP]` },
             { title: "2. Masked LM", detail: "Model dự đoán token tại vị trí [MASK]" },
             { title: "3. Softmax", detail: "Chuyển logits thành xác suất top-k" },
             { title: "4. Kết quả", detail: `Model chọn: ${best.word}` }
@@ -970,14 +1015,15 @@
           renderMetrics([
             { label: "Nguồn", value: "Python transformers" },
             { label: "Model", value: data.model },
-            { label: "Tác vụ", value: "Fill-mask thật" }
+            { label: "Kiến trúc", value: modelShape },
+            { label: "Token thật", value: `${bertTokens.length} WordPiece` }
           ]) +
           predictionTemplate(
             predictions,
             filled,
             "Kết quả này được sinh trực tiếp từ model BERT thật qua Python backend, không phải luật mô phỏng trong giao diện."
           );
-        setTokens(tokenize(text), ["[MASK]", best.word]);
+        setTokens(bertTokens, ["[MASK]", best.word]);
         setAttention(contextTokens.slice(0, 8).map((word, index) => ({
           label: word,
           score: Math.max(35, 90 - index * 7)
