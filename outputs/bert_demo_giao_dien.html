@@ -1019,7 +1019,7 @@
         const explanation = buildRealExplanation(text, predictions);
 
         resultContent.innerHTML =
-          `<div class="answer large"><strong>BERT thật: ${escapeHtml(best.word)}</strong><span>${best.score}%</span></div>` +
+          `<div class="answer large"><strong>Từ dự đoán cao nhất: ${escapeHtml(best.word)}</strong><span>${best.score}%</span></div>` +
           renderPipeline([
             { title: "1. Token hóa", detail: `${bertTokens.length} WordPiece token, gồm [CLS], [MASK], [SEP]` },
             { title: "2. Masked LM", detail: "Model dự đoán token tại vị trí [MASK]" },

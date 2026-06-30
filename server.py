@@ -79,7 +79,7 @@ class BertRuntime:
             try:
                 self._tokenizer = AutoTokenizer.from_pretrained(self.model_arg, local_files_only=local_files_only)
                 self._model = AutoModelForMaskedLM.from_pretrained(self.model_arg, local_files_only=local_files_only)
-                self._pipeline = pipeline("fill-mask", model=self._model, tokenizer=self._tokenizer, top_k=5)
+                self._pipeline = pipeline("fill-mask", model=self._model, tokenizer=self._tokenizer, top_k=30)
                 self._load_error = ""
             except Exception as exc:
                 self._load_error = str(exc)
@@ -125,13 +125,21 @@ class BertRuntime:
         predictions = []
         for item in outputs:
             token = item.get("token_str", "").strip()
+            word = token.removeprefix("##")
+            if not word or not any(character.isalpha() for character in word):
+                continue
             predictions.append(
                 {
-                    "word": token,
+                    "word": word,
                     "score": round(float(item.get("score", 0.0)) * 100, 2),
                     "sequence": item.get("sequence", ""),
                 }
             )
+            if len(predictions) == 5:
+                break
+
+        if not predictions:
+            raise ValueError("Model khong tim thay ung vien la mot tu hop le.")
         return {
             "real": True,
             "task": "fill-mask",
