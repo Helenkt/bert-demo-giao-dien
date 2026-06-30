@@ -707,7 +707,7 @@
         <div id="maskInputs" class="input-grid">
           <label>
             Câu có [MASK]
-            <textarea id="maskText">Hôm nay trời rất [MASK], tôi muốn đi chơi.</textarea>
+            <textarea id="maskText">Python is a programming [MASK].</textarea>
           </label>
           <p id="languageNote" class="input-note hidden">Model demo là English BERT, vì vậy câu [MASK] dùng tiếng Anh để kết quả chính xác hơn.</p>
         </div>
@@ -798,7 +798,7 @@
     };
 
     const samples = {
-      mask: "Hôm nay trời rất [MASK], tôi muốn đi chơi.",
+      mask: "Python is a programming [MASK].",
       realMasks: [
         "Python is a programming [MASK].",
         "The football player scored a [MASK].",
