@@ -212,6 +212,13 @@
       gap: 12px;
     }
 
+    .input-note {
+      margin: -4px 0 0;
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.45;
+    }
+
     label {
       display: grid;
       gap: 7px;
@@ -470,6 +477,12 @@
       font-size: 14px;
     }
 
+    .explain strong {
+      display: block;
+      margin-bottom: 4px;
+      color: #0f172a;
+    }
+
     .attention-item {
       display: grid;
       grid-template-columns: 82px 1fr;
@@ -696,6 +709,7 @@
             Câu có [MASK]
             <textarea id="maskText">Hôm nay trời rất [MASK], tôi muốn đi chơi.</textarea>
           </label>
+          <p id="languageNote" class="input-note hidden">Model demo là English BERT, vì vậy câu [MASK] dùng tiếng Anh để kết quả chính xác hơn.</p>
         </div>
 
         <div id="sentimentInputs" class="input-grid hidden">
@@ -752,7 +766,8 @@
 
   <script>
     const state = {
-      task: "mask"
+      task: "mask",
+      maskSampleIndex: -1
     };
 
     let realBertAvailable = false;
@@ -784,7 +799,11 @@
 
     const samples = {
       mask: "Hôm nay trời rất [MASK], tôi muốn đi chơi.",
-      realMask: "Python is a programming [MASK].",
+      realMasks: [
+        "Python is a programming [MASK].",
+        "The football player scored a [MASK].",
+        "Please open the [MASK] to enter the room."
+      ],
       sentiment: "Bộ phim này rất hay và cảm động.",
       context: "BERT là mô hình xử lý ngôn ngữ tự nhiên được xây dựng dựa trên kiến trúc Transformer. Điểm mạnh của BERT là hiểu ngữ cảnh hai chiều, nghĩa là mô hình nhìn cả phần trước và phần sau của một từ.",
       question: "BERT được xây dựng dựa trên kiến trúc nào?"
@@ -852,6 +871,8 @@
     const attentionList = document.getElementById("attentionList");
     const backendStatus = document.getElementById("backendStatus");
     const runBtn = document.getElementById("runBtn");
+    const sampleBtn = document.getElementById("sampleBtn");
+    const languageNote = document.getElementById("languageNote");
 
     const inputGroups = {
       mask: document.getElementById("maskInputs"),
@@ -870,6 +891,7 @@
       updateModeBadge();
       talkText.textContent = cfg.talk;
       keyText.textContent = cfg.key;
+      sampleBtn.textContent = task === "mask" && realBertAvailable ? "Đổi câu mẫu" : "Dùng câu mẫu";
       clearResult();
     }
 
@@ -960,15 +982,20 @@
         backendStatus.textContent = realBertAvailable ? `BERT_NAME: ${realBertModel}` : "BERT_NAME: Không khả dụng";
         backendStatus.title = status.error || (status.loaded ? "Model đã được tải sẵn" : "Model sẽ tải khi chạy lần đầu");
         updateModeBadge();
+        languageNote.classList.toggle("hidden", !realBertAvailable);
+        sampleBtn.textContent = state.task === "mask" && realBertAvailable ? "Đổi câu mẫu" : "Dùng câu mẫu";
         const maskInput = document.getElementById("maskText");
         if (realBertAvailable && maskInput.value.trim() === samples.mask) {
-          maskInput.value = samples.realMask;
+          state.maskSampleIndex = 0;
+          maskInput.value = samples.realMasks[state.maskSampleIndex];
         }
       } catch (error) {
         realBertAvailable = false;
         realBertModel = "";
         backendStatus.textContent = "BERT_NAME: Không kết nối";
         backendStatus.title = "Chạy server.py để dùng BERT thật";
+        languageNote.classList.add("hidden");
+        sampleBtn.textContent = "Dùng câu mẫu";
         updateModeBadge();
       }
     }
@@ -1003,6 +1030,7 @@
         const modelShape = metadata.hidden_layers && metadata.hidden_size && metadata.attention_heads
           ? `${metadata.hidden_layers} layer · hidden ${metadata.hidden_size} · ${metadata.attention_heads} head`
           : "BERT Small";
+        const explanation = buildRealExplanation(text, predictions);
 
         resultContent.innerHTML =
           `<div class="answer large"><strong>BERT thật: ${escapeHtml(best.word)}</strong><span>${best.score}%</span></div>` +
@@ -1021,7 +1049,8 @@
           predictionTemplate(
             predictions,
             filled,
-            "Kết quả này được sinh trực tiếp từ model BERT thật qua Python backend, không phải luật mô phỏng trong giao diện."
+            explanation,
+            "Vì sao BERT chọn từ này?"
           );
         setTokens(bertTokens, ["[MASK]", best.word]);
         setAttention(contextTokens.slice(0, 8).map((word, index) => ({
@@ -1033,6 +1062,8 @@
         realBertAvailable = false;
         backendStatus.textContent = "BERT_NAME: Mất kết nối";
         backendStatus.title = error.message;
+        languageNote.classList.add("hidden");
+        sampleBtn.textContent = "Dùng câu mẫu";
         updateModeBadge();
         resultContent.innerHTML = `
           <div class="answer negative"><strong>Không chạy được BERT thật</strong></div>
@@ -1117,7 +1148,23 @@
       `;
     }
 
-    function predictionTemplate(items, sentence, explanation = "") {
+    function buildRealExplanation(text, predictions) {
+      const best = predictions[0];
+      const second = predictions[1];
+      const reasons = {
+        "Python is a programming [MASK].": "Cụm \"programming language\" phù hợp trực tiếp với chủ thể \"Python\".",
+        "The football player scored a [MASK].": "Cụm \"scored a goal\" là kết hợp từ tự nhiên trong ngữ cảnh bóng đá.",
+        "Please open the [MASK] to enter the room.": "Hai tín hiệu \"open\" và \"enter the room\" cùng hướng tới từ \"door\"."
+      };
+      const [left = "", right = ""] = text.split("[MASK]");
+      const contextReason = reasons[text] || `BERT đọc đồng thời phần trước \"${left.trim()}\" và phần sau \"${right.trim()}\" của [MASK].`;
+
+      if (!best || !second) return contextReason;
+      const margin = Math.max(0, best.score - second.score);
+      return `${contextReason} Ứng viên \"${best.word}\" đạt ${best.score}%, cao hơn \"${second.word}\" ${margin} điểm phần trăm.`;
+    }
+
+    function predictionTemplate(items, sentence, explanation = "", explanationTitle = "Giải thích kết quả") {
       const rows = items.map((item) => `
         <div class="prediction">
           <strong>${escapeHtml(item.word)}</strong>
@@ -1129,7 +1176,7 @@
       return `
         <div class="prediction-list">${rows}</div>
         <div class="filled-sentence">${escapeHtml(sentence)}</div>
-        ${explanation ? `<div class="explain">${escapeHtml(explanation)}</div>` : ""}
+        ${explanation ? `<div class="explain"><strong>${escapeHtml(explanationTitle)}</strong>${escapeHtml(explanation)}</div>` : ""}
       `;
     }
 
@@ -1365,7 +1412,12 @@
 
     function setSample() {
       if (state.task === "mask") {
-        document.getElementById("maskText").value = realBertAvailable ? samples.realMask : samples.mask;
+        if (realBertAvailable) {
+          state.maskSampleIndex = (state.maskSampleIndex + 1) % samples.realMasks.length;
+          document.getElementById("maskText").value = samples.realMasks[state.maskSampleIndex];
+        } else {
+          document.getElementById("maskText").value = samples.mask;
+        }
       }
       if (state.task === "sentiment") {
         document.getElementById("sentimentText").value = samples.sentiment;
@@ -1387,7 +1439,7 @@
       btn.addEventListener("click", () => setTask(btn.dataset.task));
     });
     document.getElementById("runBtn").addEventListener("click", runDemo);
-    document.getElementById("sampleBtn").addEventListener("click", setSample);
+    sampleBtn.addEventListener("click", setSample);
     document.getElementById("clearBtn").addEventListener("click", clearResult);
 
     clearResult();
