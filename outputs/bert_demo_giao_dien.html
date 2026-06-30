@@ -809,23 +809,6 @@
       question: "BERT được xây dựng dựa trên kiến trúc nào?"
     };
 
-    const maskCandidates = [
-      { word: "đẹp", base: 26, contexts: ["trời", "đi chơi", "nắng", "mát", "hôm nay"], type: "thời tiết" },
-      { word: "mát", base: 18, contexts: ["trời", "gió", "dễ chịu", "đi chơi"], type: "thời tiết" },
-      { word: "nắng", base: 14, contexts: ["trời", "hôm nay", "đi chơi"], type: "thời tiết" },
-      { word: "ngân hàng", base: 28, contexts: ["rút tiền", "gửi tiền", "tài khoản", "vay", "thẻ", "ATM"], type: "tài chính" },
-      { word: "ví điện tử", base: 16, contexts: ["thanh toán", "chuyển tiền", "điện thoại", "mã QR"], type: "tài chính" },
-      { word: "AI", base: 24, contexts: ["học", "môn", "trí tuệ", "mô hình", "máy học"], type: "học tập" },
-      { word: "máy học", base: 20, contexts: ["học", "AI", "dữ liệu", "mô hình"], type: "học tập" },
-      { word: "qua môn", base: 34, contexts: ["không được", "điểm thấp", "bị điểm", "thi", "môn", "đậu", "rớt"], type: "học tập" },
-      { word: "học bổng", base: 27, contexts: ["không được", "điểm thấp", "điểm", "thành tích", "học tập"], type: "học tập" },
-      { word: "đạt", base: 25, contexts: ["không được", "điểm thấp", "kiểm tra", "bài thi", "điểm"], type: "học tập" },
-      { word: "lên lớp", base: 21, contexts: ["không được", "điểm thấp", "học lực", "thi lại", "rớt"], type: "học tập" },
-      { word: "Transformer", base: 30, contexts: ["BERT", "kiến trúc", "encoder", "attention", "dựa trên"], type: "kỹ thuật" },
-      { word: "ngữ cảnh", base: 22, contexts: ["hai chiều", "câu", "từ", "hiểu", "BERT"], type: "kỹ thuật" },
-      { word: "tốt", base: 12, contexts: ["rất", "khá", "đánh giá", "sản phẩm"], type: "chung" }
-    ];
-
     const sentimentLexicon = {
       positive: [
         { term: "hay", weight: 2.1 },
@@ -898,11 +881,14 @@
     function updateModeBadge() {
       const cfg = tasks[state.task];
       const isReal = state.task === "mask" && realBertAvailable;
-      modeBadge.textContent = `${isReal ? "BERT thật" : "Mô phỏng"} · ${cfg.taskName}`;
+      const modeLabel = isReal ? "BERT thật" : state.task === "mask" ? "Chưa kết nối" : "Mô phỏng";
+      modeBadge.textContent = `${modeLabel} · ${cfg.taskName}`;
       modeBadge.className = `mode-badge ${isReal ? "real" : "simulated"}`;
       modeBadge.title = isReal
         ? "Kết quả được tạo bởi model BERT qua Python backend"
-        : "Kết quả minh họa bằng luật cục bộ, không phải đầu ra của model BERT";
+        : state.task === "mask"
+          ? "Cần server Python để chạy English BERT thật"
+          : "Kết quả minh họa bằng luật cục bộ, không phải đầu ra của model BERT";
     }
 
     function setBusy(isBusy) {
@@ -1194,67 +1180,12 @@
         return;
       }
 
-      const left = text.split("[MASK]")[0] || "";
-      const right = text.split("[MASK]")[1] || "";
-      const contextText = `${left} ${right}`;
-      const originalContextTokens = tokenize(contextText).filter((word) => !stopWords.has(normalizeText(word)));
-      const contextWords = originalContextTokens.map((word) => normalizeText(word)).filter(Boolean);
-
-      const specialMaskPattern = containsPhrase(left, "không được") && (containsPhrase(right, "điểm thấp") || containsPhrase(right, "bị điểm"));
-      const scored = maskCandidates.map((candidate) => {
-        const matchedContexts = candidate.contexts.filter((phrase) => containsPhrase(contextText, phrase));
-        const tokenOverlap = contextWords.filter((word) =>
-          word.length >= 3 && candidate.contexts.some((phrase) => splitWords(phrase).includes(word))
-        ).length;
-        const typeBoost = matchedContexts.length * 28;
-        const overlapBoost = tokenOverlap * 7;
-        const neighborBoost = contextWords.some((word) => containsPhrase(candidate.word, word)) ? 8 : 0;
-        const maskDistanceBoost = Math.max(0, 12 - Math.abs(left.split(/\s+/).length - right.split(/\s+/).length));
-        const specialBoost = specialMaskPattern && candidate.word === "qua môn" ? 48 : 0;
-        const noContextPenalty = matchedContexts.length === 0 && tokenOverlap === 0 ? 0.08 : 1;
-        return {
-          word: candidate.word,
-          type: candidate.type,
-          raw: (candidate.base + typeBoost + overlapBoost + neighborBoost + maskDistanceBoost + specialBoost) * noContextPenalty,
-          matchedContexts,
-          tokenOverlap
-        };
-      });
-
-      const contextualCandidates = scored.filter((candidate) => candidate.matchedContexts.length > 0 || candidate.tokenOverlap > 0);
-      const pool = contextualCandidates.length ? contextualCandidates : scored;
-      const predictions = confidenceScores(topItems(pool, Math.min(5, pool.length)));
-      const best = predictions[0];
-      const filled = text.replace("[MASK]", best.word);
-      const hotWords = [...new Set(["[MASK]", ...best.matchedContexts.join(" ").split(/\s+/), ...originalContextTokens.slice(0, 6)])].filter(Boolean);
-      const attention = originalContextTokens
-        .slice(0, 8)
-        .map((word, index) => ({
-          label: word,
-          score: clamp(88 - index * 7 + (hotWords.some((hot) => normalizeText(hot) === normalizeText(word)) ? 10 : 0), 28, 96)
-        }));
-
-      resultContent.innerHTML =
-        `<div class="answer large"><strong>Mô phỏng: ${escapeHtml(best.word)}</strong><span>${best.score}%</span></div>` +
-        renderPipeline([
-          { title: "1. Token hóa", detail: `${tokenize(text).length} token được đưa vào mô hình` },
-          { title: "2. Ngữ cảnh hai chiều", detail: "Đọc phần trước và phần sau của [MASK]" },
-          { title: "3. Chấm điểm", detail: "So khớp ngữ cảnh với các ứng viên" },
-          { title: "4. Top-k", detail: `Chọn ứng viên mạnh nhất: ${best.word}` }
-        ]) +
-        renderMetrics([
-          { label: "Nguồn", value: "Luật minh họa cục bộ" },
-          { label: "Tác vụ", value: "Fill-mask" },
-          { label: "Loại ngữ cảnh", value: best.type },
-          { label: "Độ tin cậy", value: `${best.score}%` }
-        ]) +
-        predictionTemplate(
-          predictions,
-          filled,
-          `Đây là kết quả mô phỏng bằng luật ngữ cảnh, không phải đầu ra của model BERT. Ứng viên "${best.word}" khớp với ngữ cảnh ${best.type}.`
-        );
-      setTokens(tokenize(text), hotWords);
-      setAttention(attention);
+      resultContent.innerHTML = `
+        <div class="answer negative"><strong>Chưa kết nối được English BERT</strong></div>
+        <div class="explain"><strong>Không có kết quả mô phỏng</strong>Hãy mở demo bằng server Python để nhận dự đoán thật từ model.</div>
+      `;
+      setTokens(tokenize(text), ["[MASK]"]);
+      setAttention([]);
     }
 
     function predictSentiment() {
